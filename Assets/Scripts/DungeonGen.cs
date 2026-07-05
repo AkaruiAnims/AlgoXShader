@@ -21,6 +21,8 @@ public class DungeonGen : MonoBehaviour
     [SerializeField] private bool drawDebug = true; 
 
     [SerializeField] private bool regenerateRooms = false;
+
+    [SerializeField] private bool drawInSteps = false;
     
     [SerializeField] private int roomCount = 0; 
 
@@ -74,57 +76,57 @@ public class DungeonGen : MonoBehaviour
     {
         Debug.Log("Dividing spaces with seed: " + seed);
         bool isHeightPartition = false;
-        
+        int split;
+        bool canSplit = false;
+
         SpawnRoom(new Vector2Int(0, 0), new Vector2Int(dungeonWidth, dungeonHeight)); // spawn the initial room that fills the entire dungeon space
+        int currentRoomIndex = rng.Next(rooms.Count);
+
+        //Storing data
+        DungeonRoom currentRoom = rooms[currentRoomIndex];
+        DungeonRoom newRoom = new DungeonRoom(0,0,0,0);
 
         while (rooms.Count < desiredRooms)
         {
-            int currentRoomIndex = rng.Next(rooms.Count);
-            int split;
-
-            //Storing data
-            DungeonRoom currentRoom = rooms[currentRoomIndex];
-            DungeonRoom newRoom = new DungeonRoom(0,0,0,0);
-
 
             if (isHeightPartition)
             {
-                split = rng.Next(minRoomSize, rooms[currentRoomIndex].GetHeight() - minRoomSize);
-                if (split < minRoomSize || split > rooms[currentRoomIndex].GetHeight() - minRoomSize)
+                split = rng.Next(minRoomSize, currentRoom.GetHeight() - minRoomSize);
+                if (split < minRoomSize || split > currentRoom.GetHeight() - minRoomSize)
                 {
                     Debug.LogWarning("Split value is out of bounds: " + split);
                     continue; // skip this iteration if the split value is out of bounds
                 }
-
-                // divide the space vertically
-                newRoom.SetHeight( rooms[currentRoomIndex].GetHeight() - split ); // divide the height by a random number between 2 and 4
-                newRoom.SetWidth( rooms[currentRoomIndex].GetWidth() ); // keep the width the same
-                newRoom.SetPos( new Vector2Int( rooms[currentRoomIndex].GetPos().x, rooms[currentRoomIndex].GetPos().y + split ) ); 
-
-                currentRoom.SetHeight( split ); // reduce the height of the current room to make space for the new room
+                canSplit = true;
             }
             else
             {
-                split = rng.Next(minRoomSize, rooms[currentRoomIndex].GetWidth() - minRoomSize);
-                if (split < minRoomSize || split > rooms[currentRoomIndex].GetWidth() - minRoomSize)
+                split = rng.Next(minRoomSize, currentRoom.GetWidth() - minRoomSize);
+                if (split < minRoomSize || split > currentRoom.GetWidth() - minRoomSize)
                 {
                     Debug.LogWarning("Split value is out of bounds: " + split);
                     continue; // skip this iteration if the split value is out of bounds
                 }
-
-                // divide the space horizontally
-                newRoom.SetWidth( rooms[currentRoomIndex].GetWidth() - split ); // divide the width by a random number between 2 and 4
-                newRoom.SetHeight( rooms[currentRoomIndex].GetHeight() ); // keep the height the same
-                newRoom.SetPos( new Vector2Int( rooms[currentRoomIndex].GetPos().x + split, rooms[currentRoomIndex].GetPos().y ) );
-
-                currentRoom.SetWidth( split ); // reduce the width of the current room to make space for the new room
+                canSplit = true;
             }
 
-            RemoveRoomFromList(rooms[currentRoomIndex]); 
-            PushRoomToList(currentRoom); 
-            PushRoomToList(newRoom);
+            if (canSplit)
+            {
+                if (isHeightPartition)
+                {
+                    newRoom = currentRoom.SplitVertically(split);
+                }
+                else
+                {
+                    newRoom = currentRoom.SplitHorizontally(split);
+                }
 
-            isHeightPartition = !isHeightPartition;
+
+                PushRoomToList(newRoom);
+                canSplit = false; 
+                isHeightPartition = !isHeightPartition;
+                currentRoomIndex = rng.Next(rooms.Count);
+            }
         }
 
         roomCount = rooms.Count;        

@@ -49,6 +49,20 @@ public class DungeonRoom //should probably keep this private
         this.height = height;
     }
 
+    public DungeonRoom SplitVertically(int split)
+    {
+        DungeonRoom newRoom = new DungeonRoom(xPos, yPos + split, width, height - split);
+        height = split;
+        return newRoom;
+    }
+
+    public DungeonRoom SplitHorizontally(int split)
+    {
+        DungeonRoom newRoom = new DungeonRoom(xPos + split, yPos, width - split, height);
+        width = split;
+        return newRoom;
+    }
+
     public void OnDrawGizmos() // for visual debugging of the dungeon generation
     {
         //Draw xyz
