@@ -112,6 +112,7 @@ public class DungeonGen : MonoBehaviour
 
             if (canSplit)
             {
+                Debug.Log(rooms.Count + " " + "Splitting room at index " + currentRoomIndex + " with split value: " + split + " isHeightPartition: " + isHeightPartition);
                 if (isHeightPartition)
                 {
                     newRoom = currentRoom.SplitVertically(split);
