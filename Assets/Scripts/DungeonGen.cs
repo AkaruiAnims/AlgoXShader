@@ -28,6 +28,7 @@ public class DungeonGen : MonoBehaviour
 
     private List<DungeonRoom> rooms = new List<DungeonRoom>();
 
+    int maxRoomLoop = 1000; // maximum number of iterations to prevent infinite loops
 
 
     void Start()
@@ -45,6 +46,7 @@ public class DungeonGen : MonoBehaviour
     {
         if (regenerateRooms)
         {
+            rng = new System.Random(seed);
             ResetDungeon();
             DivideSpaces();
             regenerateRooms = false;
@@ -79,17 +81,27 @@ public class DungeonGen : MonoBehaviour
         int split;
         bool canSplit = false;
 
-        SpawnRoom(new Vector2Int(0, 0), new Vector2Int(dungeonWidth, dungeonHeight)); // spawn the initial room that fills the entire dungeon space
         int currentRoomIndex = rng.Next(rooms.Count);
+        int loopCount = 0;
+
+        SpawnRoom(new Vector2Int(0, 0), new Vector2Int(dungeonWidth, dungeonHeight)); // spawn the initial room that fills the entire dungeon space
 
         //Storing data
-        DungeonRoom currentRoom = rooms[currentRoomIndex];
         DungeonRoom newRoom = new DungeonRoom(0,0,0,0);
 
         while (rooms.Count < desiredRooms)
         {
+            loopCount++;
+            if (loopCount > maxRoomLoop)
+            {
+                Debug.LogError("Maximum room generation iterations reached.");
+                break;
+            }
 
-            if (isHeightPartition)
+            DungeonRoom currentRoom = rooms[currentRoomIndex];
+            split = 0;
+
+            if (isHeightPartition && currentRoom.GetHeight() > minRoomSize * 2)
             {
                 split = rng.Next(minRoomSize, currentRoom.GetHeight() - minRoomSize);
                 if (split < minRoomSize || split > currentRoom.GetHeight() - minRoomSize)
@@ -99,7 +111,8 @@ public class DungeonGen : MonoBehaviour
                 }
                 canSplit = true;
             }
-            else
+
+            if (!isHeightPartition && currentRoom.GetWidth() > minRoomSize * 2)
             {
                 split = rng.Next(minRoomSize, currentRoom.GetWidth() - minRoomSize);
                 if (split < minRoomSize || split > currentRoom.GetWidth() - minRoomSize)
