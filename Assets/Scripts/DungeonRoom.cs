@@ -8,6 +8,10 @@ public class DungeonRoom //should probably keep this private
     private int xPos;
     private int yPos;
 
+    private bool canSplitVertically;
+
+    private bool canSplitHorizontally;
+
     public DungeonRoom(int xPos = 0, int yPos = 0, int width = 0, int height = 0)
     {
         // switched to int for simplicty and visual debugger
@@ -27,6 +31,31 @@ public class DungeonRoom //should probably keep this private
         this.xPos = pos.x;
         this.yPos = pos.y;
         return pos;
+    }
+
+    public int GetDungeonRoomArea()
+    {
+        return width * height;
+    }
+
+    public bool CanSplitVertically(int minRoomSize)
+    {
+        CheckSplitability(minRoomSize);
+        return canSplitVertically;
+        
+    }
+
+    public bool CanSplitHorizontally(int minRoomSize)
+    {
+        CheckSplitability(minRoomSize);
+        return canSplitHorizontally;
+    }
+
+    public bool CheckSplitability(int minRoomSize)
+    {
+        canSplitVertically = width > minRoomSize * 2;
+        canSplitHorizontally = height > minRoomSize * 2;
+        return canSplitVertically || canSplitHorizontally;
     }
 
     public int GetWidth()
@@ -49,18 +78,18 @@ public class DungeonRoom //should probably keep this private
         this.height = height;
     }
 
-    public DungeonRoom SplitVertically(int split)
+    public Vector2Int SplitVertically(int split) // returns the remainder of the height
     {
-        DungeonRoom newRoom = new DungeonRoom(xPos, yPos + split, width, height - split);
-        height = split;
-        return newRoom;
+        int tempWidth = width - split;
+        width = split;
+        return new Vector2Int(tempWidth, height);
     }
 
-    public DungeonRoom SplitHorizontally(int split)
+    public Vector2Int SplitHorizontally(int split)
     {
-        DungeonRoom newRoom = new DungeonRoom(xPos + split, yPos, width - split, height);
-        width = split;
-        return newRoom;
+        int tempHeight = height - split;
+        height = split;
+        return new Vector2Int(width, tempHeight);
     }
 
     public void OnDrawGizmos() // for visual debugging of the dungeon generation
@@ -72,7 +101,10 @@ public class DungeonRoom //should probably keep this private
 
         RectInt a = new RectInt(xPos, yPos, width, height); 
         
-        AlgorithmsUtils.DebugRectInt(a, Color.yellow);
+        if (canSplitVertically || canSplitHorizontally)
+            AlgorithmsUtils.DebugRectInt(a, Color.blue);
+        else
+            AlgorithmsUtils.DebugRectInt(a, Color.yellow);
     }
 
 }
