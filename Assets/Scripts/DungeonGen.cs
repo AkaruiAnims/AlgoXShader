@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Collections;
 
 public class DungeonGen : MonoBehaviour
 {
@@ -24,6 +25,8 @@ public class DungeonGen : MonoBehaviour
     [SerializeField] private bool drawOnStart = true; 
 
     [SerializeField] private bool drawDebug = true; 
+
+    [SerializeField] private bool safeLoops = true; 
 
     [SerializeField] float stepDelay = 0.1f;
     
@@ -67,6 +70,30 @@ public class DungeonGen : MonoBehaviour
         
     }
 
+    void CheckListToPush(DungeonRoom roomToAdd)
+    {
+
+        if (roomToAdd.CanSplitHorizontally(minRoomSize) || roomToAdd.CanSplitVertically(minRoomSize))
+            PushToTempList(roomToAdd);
+        else         
+            PushRoomToList(roomToAdd);
+    }
+
+    void PushToTempList(DungeonRoom room)
+    {
+        if (eligibleToSplit.Count == 0){
+            eligibleToSplit.Add(room);
+            return;
+        }
+
+        eligibleToSplit.Add(room);
+        eligibleToSplit.Sort((a,b) => b.GetDungeonRoomArea().CompareTo(a.GetDungeonRoomArea()));
+    }
+
+    void PushRoomToList(DungeonRoom room)
+    {
+        completedRooms.Add(room);
+    }
 
     void ResetDungeon()
     {
@@ -78,40 +105,29 @@ public class DungeonGen : MonoBehaviour
         completedRooms.Remove(room);
     }
 
-    void PushRoomToList(DungeonRoom room)
-    {
-        completedRooms.Add(room);
-    }
 
     DungeonRoom SpawnRoom(Vector2Int position, Vector2Int size)
     {
         DungeonRoom newRoom = new DungeonRoom(position.x, position.y, size.x, size.y);
-        
-        if (newRoom.CheckSplitability(minRoomSize))
-           eligibleToSplit.Add(newRoom); 
-        else
-            PushRoomToList(newRoom);
-
         return newRoom;
     }
 
     IEnumerator DivideSpaces(float delay = 0f) 
     {
         Debug.Log("Dividing spaces with seed: " + seed);
-        bool isHeightPartition = false;
         int split;
         bool canSplit = false;
 
         int loopCount = 0;
 
-        SpawnRoom(new Vector2Int(0, 0), new Vector2Int(dungeonWidth, dungeonHeight)); // spawn the initial room that fills the entire dungeon space
-        int currentRoomIndex = rng.Next(eligibleToSplit.Count);
+        PushToTempList(SpawnRoom(new Vector2Int(0, 0), new Vector2Int(dungeonWidth, dungeonHeight))); // spawn the initial room that fills the entire dungeon space
+        int currentRoomIndex = 0;
+        bool unlimitedRooms = desiredRooms <= 0;
 
-
-        while (completedRooms.Count < desiredRooms)
+        while ((completedRooms.Count < desiredRooms || unlimitedRooms) && eligibleToSplit.Count != 0)
         {
             loopCount++;
-            if (loopCount > maxRoomLoop)
+            if (loopCount > maxRoomLoop && safeLoops)
             {
                 Debug.LogError("Maximum room generation iterations reached.");
                 completedGeneration = true;
@@ -120,6 +136,7 @@ public class DungeonGen : MonoBehaviour
             }
 
             DungeonRoom currentRoom = eligibleToSplit[currentRoomIndex];
+            bool isHeightPartition = currentRoom.GetWidth() < currentRoom.GetHeight();
             split = 0;
 
             if (isHeightPartition && currentRoom.CanSplitHorizontally(minRoomSize))
@@ -151,22 +168,27 @@ public class DungeonGen : MonoBehaviour
                 DungeonRoom newRoom; 
                 if (isHeightPartition)
                 {
-                    newRoom = SpawnRoom(currentRoom.SplitHorizontally(split),
-                                        new Vector2Int(currentRoom.GetWidth() - split, currentRoom.GetHeight())
+                    Vector2Int newSize = currentRoom.SplitHorizontally(split);
+                    newRoom = SpawnRoom(new Vector2Int(currentRoom.GetPos().x,currentRoom.GetPos().y + split),
+                                        newSize
                                         );
                 }
                 else
                 {
-                    newRoom = SpawnRoom(currentRoom.SplitVertically(split),
-                                        new Vector2Int(currentRoom.GetWidth(), currentRoom.GetHeight() - split)
+                    Vector2Int newSize = currentRoom.SplitVertically(split);
+                    newRoom = SpawnRoom(new Vector2Int(currentRoom.GetPos().x + split, currentRoom.GetPos().y),
+                                        newSize
                                         );
                 }
+                Debug.Log("Spawned new room at: " + newRoom.GetPos().x + " " +newRoom.GetPos().y);
+                Debug.Log("Width & Height: " + newRoom.GetWidth() + " " +newRoom.GetHeight());
 
+                eligibleToSplit.RemoveAt(currentRoomIndex);
+                CheckListToPush(currentRoom);
+                CheckListToPush(newRoom);
 
-                PushRoomToList(newRoom);
+                // currentRoomIndex = rng.Next(eligibleToSplit.Count);
                 canSplit = false; 
-                isHeightPartition = !isHeightPartition;
-                currentRoomIndex = rng.Next(eligibleToSplit.Count);
                 yield return new WaitForSeconds(delay);
             }
         }
@@ -190,18 +212,13 @@ public class DungeonGen : MonoBehaviour
 
         if (drawDebug)
         {
-            if (completedGeneration)
+            foreach (DungeonRoom room in completedRooms)
             {
-                foreach (DungeonRoom room in completedRooms)
-                {
-                    room.OnDrawGizmos();
-                }
-            } else
+                room.OnDrawGizmos();
+            }
+            foreach (DungeonRoom room in eligibleToSplit)
             {
-                foreach (DungeonRoom room in eligibleToSplit)
-                {
-                    room.OnDrawGizmos();
-                }
+                room.OnDrawGizmos();
             }
         }
     }
