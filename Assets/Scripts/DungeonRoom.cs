@@ -89,6 +89,9 @@ public class DungeonRoom //should probably keep this private
         );
     }
     
+    /// <summary>
+    /// Checks whether another room shares an edge with this room.
+    /// </summary>
     public bool RoomsBorderEachOther(DungeonRoom otherRoom)
     {
         bool isLeft = otherRoom.GetWidth()+otherRoom.GetPos().x == GetPos().x;
@@ -109,6 +112,9 @@ public class DungeonRoom //should probably keep this private
         return false;
     }
 
+    /// <summary>
+    /// Pushes other room to this room's neighbor list
+    /// </summary>
     public void AddNeighbor(DungeonRoom room)
     {
         neighboringRooms.Add(room);  
@@ -116,6 +122,9 @@ public class DungeonRoom //should probably keep this private
         //Spawn Door here later
     }
 
+    /// <summary>
+    /// Gets the center of both rooms and returns the lenght between them 
+    /// </summary>
     public float returnDistanceBetweenRooms(DungeonRoom otherRoom)
     {
         return Vector2.Distance(this.GetCenter(), otherRoom.GetCenter());

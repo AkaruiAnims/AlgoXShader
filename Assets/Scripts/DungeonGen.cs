@@ -123,6 +123,7 @@ public class DungeonGen : MonoBehaviour
         return newRoom;
     }
 
+
     IEnumerator DivideSpaces(float delay = 0f) 
     {
         Debug.Log("Dividing spaces with seed: " + seed);
@@ -210,6 +211,7 @@ public class DungeonGen : MonoBehaviour
         yield return null;
     }
 
+
     IEnumerator CheckForNeighbors(float delay =0f)
     {
         Debug.Log("Checking for neighbors!");
@@ -218,7 +220,6 @@ public class DungeonGen : MonoBehaviour
         foreach (DungeonRoom roomA in completedRooms)
         {
             Debug.Log("Now doing room: "+(tempIndex+1)+" out of "+completedRooms.Count);
-            List<DungeonRoom> neighborCandidates = new List<DungeonRoom>(); 
             foreach (DungeonRoom roomB in completedRooms)
             {
                 if(roomA == roomB)
@@ -235,6 +236,7 @@ public class DungeonGen : MonoBehaviour
         Debug.Log("Connected rooms!");
         yield return null;
     }
+
 
     void OnDrawGizmos() // for visual debugging of the dungeon generation
     {
