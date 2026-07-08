@@ -96,7 +96,7 @@ public class DungeonRoom //should probably keep this private
             yPos + height / 2
         );
     }
-    
+
     public int GetTempNeighborCountBesidesParent()
     {
         return neighboringRooms.Count -1;
