@@ -40,6 +40,8 @@ public class DungeonGen : MonoBehaviour
 
     private bool completedGeneration = false; 
 
+    private bool completedConnection = false; 
+
 
     void Start()
     {
@@ -53,7 +55,7 @@ public class DungeonGen : MonoBehaviour
     {
         if ( Input.GetKeyDown(KeyCode.R)) //Random newGen
         {
-            completedGeneration = false;
+            completedConnection = completedGeneration = false;
             seed = Random.Range(1, int.MaxValue);
             rng = new System.Random(seed);
             ResetDungeon();
@@ -62,12 +64,15 @@ public class DungeonGen : MonoBehaviour
 
         if ( Input.GetKeyDown(KeyCode.Space)) //Replay currentGen
         {
-            completedGeneration = false;
+            completedConnection = completedGeneration = false;
             rng = new System.Random(seed);
             ResetDungeon();
             StartCoroutine(DivideSpaces(stepDelay));
         }
-        
+
+        if (completedGeneration && completedConnection)
+            StartCoroutine(CheckForNeighbors(stepDelay));
+
     }
 
     void CheckListToPush(DungeonRoom roomToAdd)
@@ -197,6 +202,40 @@ public class DungeonGen : MonoBehaviour
         completedGeneration = true;
         eligibleToSplit.Clear(); 
         yield return null;
+    }
+
+    IEnumerator CheckForNeighbors(float delay =0f)
+    {
+        Debug.Log("Checking for neighbors!");
+
+        foreach (DungeonRoom roomA in completedRooms)
+        {
+            List<DungeonRoom> neighborCandidates = new List<DungeonRoom>(); 
+            foreach (DungeonRoom roomB in completedRooms)
+            {
+                if(roomA == roomB)
+                    continue;
+
+                neighborCandidates.Add(roomB);
+                neighborCandidates.Sort((a,b) => b.returnDistanceBetweenRooms(roomA).CompareTo(a.returnDistanceBetweenRooms(roomA)));
+            }
+            CollapseToBestCandidates(roomA, neighborCandidates);
+            yield return new WaitForSeconds(delay);
+        }
+
+        completedConnection = true;
+        yield return null;
+    }
+
+    void CollapseToBestCandidates(DungeonRoom roomForNeighbors, List<DungeonRoom> neighboringRooms)
+    {
+        int doorsToAdd = rng.Next(2);
+
+        while (doorsToAdd > 2 || doorsToAdd < 1)
+            doorsToAdd = rng.Next(2);
+
+        for(int i =0; i < doorsToAdd; i++)    
+            roomForNeighbors.AddNeighbor(neighboringRooms[i]);
     }
 
     void OnDrawGizmos() // for visual debugging of the dungeon generation
