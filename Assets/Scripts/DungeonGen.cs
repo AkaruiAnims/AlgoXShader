@@ -225,8 +225,10 @@ public class DungeonGen : MonoBehaviour
                 if(roomA == roomB)
                     continue;
 
-                if(roomA.RoomsBorderEachOther(roomB))
+                if(roomA.RoomsBorderEachOther(roomB)){
                     roomA.AddNeighbor(roomB);
+                    // roomB.AddNeighbor(roomA);
+                }
             }
             tempIndex++;
             yield return new WaitForSeconds(delay);
@@ -237,6 +239,40 @@ public class DungeonGen : MonoBehaviour
         yield return null;
     }
 
+    IEnumerator EliminateLoops()
+    {
+        Stack<DungeonRoom> pathStack = new Stack<DungeonRoom>();
+        HashSet<DungeonRoom> visited = new HashSet<DungeonRoom>();
+
+        DungeonRoom currentPath = completedRooms[0];
+
+        while(true)
+        {
+            visited.Add(currentPath);
+
+            DungeonRoom nextRoom = currentPath.GetTempNeighborBesidesParent();
+
+            if(nextRoom != null)
+            {
+                if(!visited.Contains(nextRoom))
+                {
+                    pathStack.Push(currentPath);
+                    currentPath = nextRoom;
+                }
+            }
+            else
+            {
+                if(pathStack.Count == 0)
+                    break;
+
+                currentPath = pathStack.Pop();
+            }
+
+            yield return new WaitForSeconds(stepDelay);
+        }
+        
+        yield return null;
+    }
 
     void OnDrawGizmos() // for visual debugging of the dungeon generation
     {

@@ -12,7 +12,14 @@ public class DungeonRoom //should probably keep this private
     private bool canSplitVertically;
     private bool canSplitHorizontally;
 
+    private DungeonRoom parentRoom;
+
     private List<DungeonRoom> neighboringRooms;
+    private List<DungeonRoom> connectedRooms;
+
+    private DungeonRoom lastSentRoom;
+
+    private int askedForNeighbor = 0;
 
     public DungeonRoom(int xPos = 0, int yPos = 0, int width = 0, int height = 0)
     {
@@ -22,6 +29,7 @@ public class DungeonRoom //should probably keep this private
         this.xPos = xPos;
         this.yPos = yPos;
         neighboringRooms = new List<DungeonRoom>();
+        connectedRooms =  new List<DungeonRoom>();
     }
 
     public Vector2Int GetPos()
@@ -89,6 +97,35 @@ public class DungeonRoom //should probably keep this private
         );
     }
     
+    public int GetTempNeighborCountBesidesParent()
+    {
+        return neighboringRooms.Count -1;
+    }
+
+    public DungeonRoom GetTempNeighborBesidesParent()
+    {
+        while (askedForNeighbor < neighboringRooms.Count)
+        {
+            DungeonRoom neighbor = neighboringRooms[askedForNeighbor];
+            askedForNeighbor++;
+
+            if (neighbor != parentRoom)
+                return lastSentRoom = neighbor;
+        }
+
+        return null; // no more neighbors
+    }
+
+    public DungeonRoom GetLastSentRoom()
+    {
+        return lastSentRoom;
+    }
+
+    public DungeonRoom GetParentRoom()
+    {
+        return parentRoom;
+    }
+    
     /// <summary>
     /// Checks whether another room shares an edge with this room.
     /// </summary>
@@ -113,12 +150,27 @@ public class DungeonRoom //should probably keep this private
     }
 
     /// <summary>
-    /// Pushes other room to this room's neighbor list
+    /// Pushes other room to this room's possible neighbors list
     /// </summary>
     public void AddNeighbor(DungeonRoom room)
     {
         neighboringRooms.Add(room);  
         Debug.Log("Neighbor "+ neighboringRooms.Count +" added!");
+    }
+
+   public void RemoveNeighbor(DungeonRoom room)
+    {
+        neighboringRooms.Remove(room);  
+        Debug.Log("Neighbor "+ neighboringRooms.Count +" removed!");
+    }
+
+    /// <summary>
+    /// Pushes other room to this room's connected neighbors list
+    /// </summary>
+    public void AddConnectedNeighbor(DungeonRoom room)
+    {
+        connectedRooms.Add(room);  
+        Debug.Log("Neighbor "+ connectedRooms.Count +" added!");
         //Spawn Door here later
     }
 
@@ -167,9 +219,20 @@ public class DungeonRoom //should probably keep this private
                 Vector3 currentCenterFix = new Vector3(currentCenter.x, 0, currentCenter.y);
                 Vector3 neighborCenterFix =  new Vector3(neighborCenter.x, 0, neighborCenter.y);
 
+                Debug.DrawLine(currentCenterFix, neighborCenterFix, Color.blue);   
+            }
+
+        if (connectedRooms.Count > 0)
+            foreach (DungeonRoom room in connectedRooms)
+            {
+                Vector2Int currentCenter = GetCenter();                
+                Vector2Int neighborCenter = room.GetCenter();                
+
+                Vector3 currentCenterFix = new Vector3(currentCenter.x, 0, currentCenter.y);
+                Vector3 neighborCenterFix =  new Vector3(neighborCenter.x, 0, neighborCenter.y);
+
                 Debug.DrawLine(currentCenterFix, neighborCenterFix, Color.green);   
             }
 
     }
-
 }
