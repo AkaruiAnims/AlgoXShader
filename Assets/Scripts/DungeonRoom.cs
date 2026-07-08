@@ -88,10 +88,31 @@ public class DungeonRoom //should probably keep this private
             yPos + height / 2
         );
     }
+    
+    public bool RoomsBorderEachOther(DungeonRoom otherRoom)
+    {
+        bool isLeft = otherRoom.GetWidth()+otherRoom.GetPos().x == GetPos().x;
+        bool isRight = GetWidth()+GetPos().x == otherRoom.GetPos().x;
+
+        bool isUp = otherRoom.GetHeight()+otherRoom.GetPos().y == GetPos().y;
+        bool isDown = GetHeight()+GetPos().y == otherRoom.GetPos().y;
+
+        if(isUp || isDown || isLeft || isRight)
+        Debug.Log($"Room A: L={isLeft} R={isRight} B={isDown} T={isUp}");
+
+        if(otherRoom.GetPos().x == GetPos().x  && (isUp || isDown)) 
+            return true;
+
+        if(otherRoom.GetPos().y == GetPos().y  && (isLeft || isRight)) 
+            return true;
+
+        return false;
+    }
 
     public void AddNeighbor(DungeonRoom room)
     {
         neighboringRooms.Add(room);  
+        Debug.Log("Neighbor "+ neighboringRooms.Count +" added!");
         //Spawn Door here later
     }
 
